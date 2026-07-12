@@ -497,6 +497,11 @@ with tab1:
                                 }
                             )
                         )
+                        gauge.update_layout(
+    paper_bgcolor="black",
+    plot_bgcolor="black",
+    font={"color": "white"}
+)
 
                         gauge.update_layout(
                             height=320,
