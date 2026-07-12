@@ -64,7 +64,7 @@ button[data-baseweb="tab"]{
 /* Risk Skoru kartı */
 .risk-card {
     background-color: #000000;
-    color: white;
+    color: rgb(0, 0, 0);
     padding: 20px;
     border-radius: 15px;
     text-align: center;
@@ -74,7 +74,7 @@ button[data-baseweb="tab"]{
 .risk-card h2,
 .risk-card h3,
 .risk-card p {
-    color: white;
+    color: rgb(1, 1, 1);
 }
 /* Plotly grafik arka planı */
 .stPlotlyChart {
