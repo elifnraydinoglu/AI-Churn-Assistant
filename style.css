@@ -76,3 +76,15 @@ button[data-baseweb="tab"]{
 .risk-card p {
     color: white;
 }
+/* Plotly grafik arka planı */
+.stPlotlyChart {
+    background-color: #0C0D0C !important;
+    border-radius: 15px;
+    padding: 10px;
+}
+
+/* Grafik container */
+[data-testid="stPlotlyChart"] {
+    background-color: #0C0D0C !important;
+    border-radius: 15px;
+}
