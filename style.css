@@ -88,3 +88,19 @@ button[data-baseweb="tab"]{
     background-color: #0C0D0C !important;
     border-radius: 15px;
 }
+/* AI Prediction kartı ve grafik alanı */
+[data-testid="stPlotlyChart"] {
+    background-color: #0C0D0C !important;
+    border-radius: 15px;
+    padding: 10px;
+}
+
+/* Plotly iframe arka planı */
+iframe {
+    background-color: #0C0D0C !important;
+}
+
+/* Grafik bulunduğu alan */
+.element-container {
+    background-color: transparent !important;
+}
