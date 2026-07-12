@@ -482,8 +482,11 @@ with tab1:
 
 
                         gauge = go.Figure(
+
                             go.Indicator(
+
                                 mode="gauge+number",
+
                                 value=probability * 100,
 
                                 number={
@@ -513,26 +516,27 @@ with tab1:
                                         "color": "#007AFF"
                                     },
 
-                                    "bgcolor": "#0C0D0C",
+                                    "bgcolor": "#111111",
 
-                                    "bordercolor": "#333333",
+                                    "bordercolor": "#555555",
 
                                     "steps": [
 
                                         {
                                             "range": [0, 40],
-                                            "color": "#14532D"
+                                            "color": "#166534"
                                         },
 
                                         {
                                             "range": [40, 70],
-                                            "color": "#854D0E"
+                                            "color": "#A16207"
                                         },
 
                                         {
                                             "range": [70, 100],
                                             "color": "#991B1B"
                                         }
+
                                     ]
                                 }
                             )
@@ -544,9 +548,9 @@ with tab1:
 
                             height=320,
 
-                            paper_bgcolor="#0C0D0C",
+                            paper_bgcolor="#111111",
 
-                            plot_bgcolor="#0C0D0C",
+                            plot_bgcolor="#111111",
 
                             font={
                                 "color": "white"
@@ -555,15 +559,18 @@ with tab1:
                             margin=dict(
                                 l=20,
                                 r=20,
-                                t=40,
+                                t=50,
                                 b=20
                             )
                         )
 
 
                         st.plotly_chart(
+
                             gauge,
+
                             use_container_width=True
+
                         )
 
 
@@ -573,7 +580,7 @@ with tab1:
 
                         else:
 
-                            st.success("🟢 LOW CHURN RISK")
+                            st.success("🟢 LOW CHURN RISK")                    
 
 
                     st.markdown("---")
