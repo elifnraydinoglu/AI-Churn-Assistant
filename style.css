@@ -61,3 +61,18 @@ button[data-baseweb="tab"]{
     font-size:16px;
     font-weight:600;
 }
+/* Risk Skoru kartı */
+.risk-card {
+    background-color: #000000;
+    color: white;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+}
+
+.risk-card h1,
+.risk-card h2,
+.risk-card h3,
+.risk-card p {
+    color: white;
+}

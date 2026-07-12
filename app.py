@@ -483,25 +483,22 @@ with tab1:
                                     "steps": [
                                         {
                                             "range": [0, 40],
-                                            "color": "#E8F5E9"
+                                            "color": "#0C0D0C"
                                         },
                                         {
                                             "range": [40, 70],
-                                            "color": "#FFF8E1"
+                                            "color": "#0C0C0C"
                                         },
                                         {
                                             "range": [70, 100],
-                                            "color": "#FDECEA"
+                                            "color": "#0B0A0A"
                                         }
                                     ]
                                 }
                             )
                         )
-                        gauge.update_layout(
-    paper_bgcolor="black",
-    plot_bgcolor="black",
-    font={"color": "white"}
-)
+         
+
 
                         gauge.update_layout(
                             height=320,
