@@ -380,9 +380,7 @@ tab1,tab2=st.tabs([
     "📂 Batch Analysis"
 ])
 
-# ==========================
-# TEK MÜŞTERİ ANALİZİ
-# ==========================
+
 
 # ==========================
 # TEK MÜŞTERİ ANALİZİ
@@ -435,6 +433,7 @@ with tab1:
                             use_container_width=True
                         )
 
+
                     # -------------------------
                     # MODEL PREPARATION
                     # -------------------------
@@ -451,58 +450,108 @@ with tab1:
                         drop_first=True
                     )
 
+
                     for col in model.feature_names_in_:
 
                         if col not in customer_ml.columns:
                             customer_ml[col] = 0
 
+
                     customer_ml = customer_ml[
                         model.feature_names_in_
                     ]
+
 
                     prediction = model.predict(
                         customer_ml
                     )[0]
 
+
                     probability = model.predict_proba(
                         customer_ml
                     )[0][1]
+
+
+                    # -------------------------
+                    # AI PREDICTION
+                    # -------------------------
+
                     with right:
 
                         st.subheader("🤖 AI Prediction")
+
 
                         gauge = go.Figure(
                             go.Indicator(
                                 mode="gauge+number",
                                 value=probability * 100,
-                                number={"suffix": "%"},
-                                title={"text": "Customer Risk Score"},
+
+                                number={
+                                    "suffix": "%",
+                                    "font": {
+                                        "color": "white",
+                                        "size": 40
+                                    }
+                                },
+
+                                title={
+                                    "text": "Customer Risk Score",
+                                    "font": {
+                                        "color": "white",
+                                        "size": 20
+                                    }
+                                },
+
                                 gauge={
-                                    "axis": {"range": [0, 100]},
-                                    "bar": {"color": "#007AFF"},
+
+                                    "axis": {
+                                        "range": [0, 100],
+                                        "tickcolor": "white"
+                                    },
+
+                                    "bar": {
+                                        "color": "#007AFF"
+                                    },
+
+                                    "bgcolor": "#0C0D0C",
+
+                                    "bordercolor": "#333333",
+
                                     "steps": [
+
                                         {
                                             "range": [0, 40],
-                                            "color": "#0C0D0C"
+                                            "color": "#14532D"
                                         },
+
                                         {
                                             "range": [40, 70],
-                                            "color": "#0C0C0C"
+                                            "color": "#854D0E"
                                         },
+
                                         {
                                             "range": [70, 100],
-                                            "color": "#0B0A0A"
+                                            "color": "#991B1B"
                                         }
                                     ]
                                 }
                             )
                         )
-         
+
 
 
                         gauge.update_layout(
+
                             height=320,
-                            paper_bgcolor="white",
+
+                            paper_bgcolor="#0C0D0C",
+
+                            plot_bgcolor="#0C0D0C",
+
+                            font={
+                                "color": "white"
+                            },
+
                             margin=dict(
                                 l=20,
                                 r=20,
@@ -511,10 +560,12 @@ with tab1:
                             )
                         )
 
+
                         st.plotly_chart(
                             gauge,
                             use_container_width=True
                         )
+
 
                         if prediction == 1:
 
@@ -524,13 +575,16 @@ with tab1:
 
                             st.success("🟢 LOW CHURN RISK")
 
-                        st.markdown("---")
 
-                        st.subheader("🧠 AI Insight")
+                    st.markdown("---")
 
-                        if prediction == 1:
 
-                            st.warning(f"""
+                    st.subheader("🧠 AI Insight")
+
+
+                    if prediction == 1:
+
+                        st.warning(f"""
 Customer behavior indicates a high churn probability.
 
 Current Risk Score: **{probability*100:.1f}%**
@@ -546,21 +600,21 @@ Current Risk Score: **{probability*100:.1f}%**
 • Monitor future trading activity
 """)
 
-                        else:
+                    else:
 
-                            st.success(f"""
-Customer behavior appears healthy.
+                        st.success(f"""
+Customer shows a low churn probability.
 
 Current Risk Score: **{probability*100:.1f}%**
 
-### Recommendation
+### Recommended Actions
 
-Continue regular customer engagement and monitor activity.
+• Maintain customer engagement
+
+• Offer premium investment opportunities
+
+• Monitor portfolio activity
 """)
-
-                    st.divider()
-
-                    col1, col2 = st.columns(2)
 
                     st.divider()
 
@@ -590,6 +644,7 @@ Continue regular customer engagement and monitor activity.
                         if customer.iloc[0]["cash_out_3m"] > 50000:
                             riskler.append("💸 Son 3 ayda yüksek para çıkışı.")
 
+
                         if len(riskler) == 0:
 
                             st.success(
@@ -601,11 +656,14 @@ Continue regular customer engagement and monitor activity.
                             for r in riskler:
                                 st.write(r)
 
+
+
                     with col2:
 
                         st.subheader("💡 AI Recommendations")
 
                         oneriler = []
+
 
                         if customer.iloc[0]["last_login_days"] > 30:
                             oneriler.append("📲 Push bildirimi gönder.")
@@ -622,6 +680,7 @@ Continue regular customer engagement and monitor activity.
                         if customer.iloc[0]["cash_out_3m"] > 50000:
                             oneriler.append("💼 Portföy danışmanlığı öner.")
 
+
                         if len(oneriler) == 0:
 
                             st.success(
@@ -633,19 +692,22 @@ Continue regular customer engagement and monitor activity.
                             for o in oneriler:
                                 st.write(o)
 
+
             except ValueError:
 
                 st.error(
                     "Lütfen sadece sayı giriniz."
                 )
 
+
             except Exception as e:
 
-                st.error(e)
+                st.error(
+                    f"Error: {e}"
+                )
 
-# ==========================
-# TOPLU ANALİZ
-# ==========================
+
+
 # ==========================
 # TOPLU ANALİZ
 # ==========================
