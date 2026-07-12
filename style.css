@@ -1,0 +1,63 @@
+/* Genel Sayfa */
+.stApp{
+    background:#0a0a0b;
+}
+
+/* İçerik */
+.block-container{
+    padding-top:2rem;
+    padding-left:3rem;
+    padding-right:3rem;
+}
+
+/* KPI Kartları */
+[data-testid="metric-container"]{
+    background:rgb(23, 20, 20);
+    border:1px solid #0f0d0d;
+    border-radius:18px;
+    padding:25px;
+    box-shadow:0px 6px 20px rgba(0,0,0,.05);
+}
+
+/* Başlıklar */
+h1{
+    color:#090909;
+    font-size:44px;
+    font-weight:700;
+}
+
+h2,h3{
+    color:#090909;
+}
+
+/* Sidebar */
+section[data-testid="stSidebar"]{
+    background:rgb(0, 0, 0);
+    border-right:1px solid #010101;
+}
+
+/* Buton */
+.stButton>button{
+    background:#007AFF;
+    color:rgb(11, 10, 10);
+    border:none;
+    border-radius:12px;
+    height:48px;
+    font-weight:600;
+}
+
+.stButton>button:hover{
+    background:#0066d6;
+}
+
+/* DataFrame */
+[data-testid="stDataFrame"]{
+    border-radius:18px;
+    overflow:hidden;
+}
+
+/* Tabs */
+button[data-baseweb="tab"]{
+    font-size:16px;
+    font-weight:600;
+}
