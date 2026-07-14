@@ -55,9 +55,20 @@ customer_summary = pd.read_excel(
     "customer_summary.xlsx"
 )
 
-history = pd.read_excel(
-    "data/investment_customers_history.xlsx"
+uploaded_file = st.sidebar.file_uploader(
+    "Müşteri Verisi Yükle",
+    type=["xlsx"]
 )
+
+if uploaded_file:
+
+    history = pd.read_excel(uploaded_file)
+
+else:
+    st.warning(
+        "Analiz için müşteri Excel dosyası yükleyiniz."
+    )
+    st.stop()
 
 # ==========================================
 # SIDEBAR
