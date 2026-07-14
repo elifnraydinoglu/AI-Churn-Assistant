@@ -1,862 +1,2056 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import joblib
 import plotly.express as px
 import plotly.graph_objects as go
-import plotly.graph_objects as go
+
+from pathlib import Path
+
+# ==========================================
+# SAYFA AYARLARI
+# ==========================================
 
 st.set_page_config(
-    page_title="AI Churn Assistant",
+    page_title="AI Customer Intelligence Platform",
     page_icon="🤖",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# ==========================
+# ==========================================
 # CSS
-# ==========================
+# ==========================================
 
-with open("style.css") as f:
-    st.markdown(
-        f"<style>{f.read()}</style>",
-        unsafe_allow_html=True
-    )
+css_file = Path("style.css")
 
+if css_file.exists():
+    with open(css_file, encoding="utf-8") as f:
+        st.markdown(
+            f"<style>{f.read()}</style>",
+            unsafe_allow_html=True
+        )
 
-# ==========================
-# SIDEBAR
-# ==========================
-
-st.sidebar.image(
-    "https://img.icons8.com/color/96/artificial-intelligence.png",
-    width=90
-)
-
-st.sidebar.markdown("## AI Churn")
-
-st.sidebar.caption("Customer Intelligence")
-
-st.sidebar.divider()
-
-st.sidebar.metric("Model Accuracy", "96.5%")
-
-st.sidebar.metric("Algorithm", "Random Forest")
-
-st.sidebar.metric("Version", "2.0")
-
-st.sidebar.divider()
-
-st.sidebar.markdown("### Navigation")
-
-st.sidebar.write("• Dashboard")
-
-st.sidebar.write("• Single Customer")
-
-st.sidebar.write("• Batch Analysis")
-
-st.sidebar.write("• Reports")
-
-st.sidebar.divider()
-
-st.sidebar.markdown("### Developer")
-
-st.sidebar.write("Elifnur Aydınoğlu")
-
-st.sidebar.caption("AI & CRM Analytics")
-
-st.sidebar.markdown("---")
-
-st.sidebar.write("### 👩‍💻 Developer")
-st.sidebar.write("Elifnur Aydınoğlu")
-
-# ==========================
-# HEADER
-# ==========================
+# ==========================================
+# BAŞLIK
+# ==========================================
 
 st.markdown("""
-<div style="
-background:white;
-padding:35px;
-border-radius:22px;
-border:1px solid #ECECEC;
-box-shadow:0px 8px 25px rgba(0,0,0,.05);
-margin-bottom:30px;
-">
+# 🤖 AI Customer Intelligence Platform
 
-<h1 style="
-font-size:42px;
-margin-bottom:6px;
-color:#111827;
-font-weight:700;
-">
-AI Churn Assistant
-</h1>
-
-<p style="
-font-size:21px;
-color:#6B7280;
-margin-top:0;
-margin-bottom:8px;
-">
-Customer Intelligence Platform
-</p>
-
-<p style="
-color:#9CA3AF;
-font-size:16px;
-line-height:1.7;
-">
-Machine Learning powered CRM dashboard for predicting customer churn,
-identifying high-risk customers and recommending personalized retention strategies.
-</p>
-
-</div>
-""", unsafe_allow_html=True)
-# ==========================
-# DATA
-# ==========================
-
-df = pd.read_excel("data/investment_customers.xlsx")
-
-model = joblib.load(
-    "models/churn_model.pkl"
-)
-
-# ==========================
-# KPI
-# ==========================
-
-toplam_musteri=len(df)
-toplam_churn=df["churn"].sum()
-aktif=toplam_musteri-toplam_churn
-oran=toplam_churn/toplam_musteri*100
-
-c1,c2,c3,c4=st.columns(4)
-
-with c1:
-    st.metric(
-        "Customers",
-        f"{toplam_musteri:,}"
-    )
-
-with c2:
-    st.metric(
-        "Churn",
-        f"{toplam_churn:,}"
-    )
-
-with c3:
-    st.metric(
-        "Active",
-        f"{aktif:,}"
-    )
-
-with c4:
-    st.metric(
-        "Churn Rate",
-        f"{oran:.1f}%"
-    )
-
-# ==========================
-# QUICK ACTIONS
-# ==========================
-
-st.markdown("### 🚀 Quick Actions")
-
-c1, c2, c3 = st.columns(3)
-
-with c1:
-    st.button("📂 Upload Customer File", use_container_width=True)
-
-with c2:
-    st.button("📊 View Dashboard", use_container_width=True)
-
-with c3:
-    excel = df.to_csv(index=False).encode("utf-8")
-
-    st.download_button(
-        label="📥 Export Report",
-        data=excel,
-        file_name="AI_Churn_Report.csv",
-        mime="text/csv",
-        use_container_width=True
-    )
-
-# ==========================
-# SIDEBAR
-# ==========================
-
-with st.sidebar:
-
-    st.image(
-        "https://img.icons8.com/fluency/96/artificial-intelligence.png",
-        width=90
-    )
-
-    st.title("AI Churn")
-
-    st.success("🟢 Model Online")
-
-    st.metric(
-        "Accuracy",
-        "96.5%"
-    )
-
-    st.metric(
-        "Algorithm",
-        "Random Forest"
-    )
-
-    st.metric(
-        "Version",
-        "1.0"
-    )
-
-    st.markdown("---")
-
-    st.write("### Developer")
-
-    st.write("Elifnur Aydınoğlu")
-
-    st.caption("AI CRM Dashboard")
-
-# ==========================
-# GRAFİKLER
-# ==========================
+### AI-Powered Customer Churn Prediction & Portfolio Analytics
+""")
 
 st.divider()
 
-left,right=st.columns(2)
+# ==========================================
+# MODEL VE VERİ
+# ==========================================
 
-with left:
+model = joblib.load("churn_model.pkl")
 
-    fig = px.pie(
-        df,
-        names="churn",
-        title="Customer Risk Distribution",
-        color="churn",
-        color_discrete_map={
-            0: "#2ecc71",
-            1: "#e74c3c"
-        }
+feature_columns = joblib.load("feature_columns.pkl")
+
+customer_summary = pd.read_excel(
+    "customer_summary.xlsx"
+)
+
+history = pd.read_excel(
+    "data/investment_customers_history.xlsx"
+)
+
+# ==========================================
+# SIDEBAR
+# ==========================================
+
+st.sidebar.title("Navigation")
+
+page = st.sidebar.radio(
+
+    "Select Page",
+
+    [
+
+        "🏠 Dashboard",
+
+        "👤 Customer Analysis",
+
+        "📈 Customer Trends",
+
+        "🤖 AI Insights",
+
+        "📊 Portfolio Analytics",
+
+        "👥 Customer Segmentation",
+
+        "📁 Batch Prediction"
+
+    ]
+
+)
+# ==========================================
+# DASHBOARD
+# ==========================================
+
+if page == "🏠 Dashboard":
+
+    total_customers = len(customer_summary)
+
+    high_risk = len(
+        customer_summary[
+            customer_summary["risk_score"] >= 50
+        ]
     )
 
-    fig.update_traces(
-        textposition="inside",
-        textinfo="percent+label"
+    avg_risk = round(
+        customer_summary["risk_score"].mean(),
+        1
+    )
+
+    churn_rate = round(
+        customer_summary["churn"].mean() * 100,
+        1
+    )
+
+    total_portfolio = customer_summary[
+        "portfolio_last"
+    ].sum()
+
+    c1, c2, c3, c4, c5 = st.columns(5)
+
+    with c1:
+
+        st.metric(
+
+            "👥 Total Customers",
+
+            f"{total_customers:,}"
+
+        )
+
+    with c2:
+
+        st.metric(
+
+            "🚨 High Risk",
+
+            f"{high_risk:,}"
+
+        )
+
+    with c3:
+
+        st.metric(
+
+            "📊 Avg Risk Score",
+
+            avg_risk
+
+        )
+
+    with c4:
+
+        st.metric(
+
+            "📉 Churn Rate",
+
+            f"%{churn_rate}"
+
+        )
+
+    with c5:
+
+        st.metric(
+
+            "💰 Portfolio",
+
+            f"₺{total_portfolio/1_000_000:,.1f} M"
+
+        )
+
+    st.divider()
+
+        # ==========================================
+    # DASHBOARD GRAFİKLERİ
+    # ==========================================
+
+    left, right = st.columns([1.2, 1])
+
+    # ------------------------------------------
+    # RİSK DAĞILIMI (GAUGE)
+    # ------------------------------------------
+
+    with left:
+
+        st.subheader("🎯 Customer Risk Score")
+
+        gauge = go.Figure(
+            go.Indicator(
+
+                mode="gauge+number",
+
+                value=avg_risk,
+
+                number={"suffix": "/100"},
+
+                gauge={
+
+                    "axis": {
+
+                        "range": [0, 100]
+
+                    },
+
+                    "bar": {
+
+                        "color": "#007AFF"
+
+                    },
+
+                    "steps": [
+
+                        {
+
+                            "range": [0, 35],
+
+                            "color": "#34C759"
+
+                        },
+
+                        {
+
+                            "range": [35, 65],
+
+                            "color": "#FFCC00"
+
+                        },
+
+                        {
+
+                            "range": [65, 100],
+
+                            "color": "#FF3B30"
+
+                        }
+
+                    ]
+
+                }
+
+            )
+
+        )
+
+        gauge.update_layout(
+
+            height=380,
+
+            margin=dict(
+                l=30,
+                r=30,
+                t=30,
+                b=20
+            )
+
+        )
+
+        st.plotly_chart(
+            gauge,
+            use_container_width=True
+        )
+
+    # ------------------------------------------
+    # RİSK SEGMENTLERİ
+    # ------------------------------------------
+
+    with right:
+
+        st.subheader("👥 Risk Segments")
+
+        segment = customer_summary.copy()
+
+        segment["Risk Level"] = pd.cut(
+
+            segment["risk_score"],
+
+            bins=[0, 35, 65, 100],
+
+            labels=[
+
+                "Low",
+
+                "Medium",
+
+                "High"
+
+            ]
+
+        )
+
+        fig = px.pie(
+
+            segment,
+
+            names="Risk Level",
+
+            hole=0.65
+
+        )
+
+        fig.update_layout(
+
+            height=380,
+
+            showlegend=True
+
+        )
+
+        st.plotly_chart(
+
+            fig,
+
+            use_container_width=True
+
+        )
+
+    st.divider()
+
+    # ==========================================
+    # PORTFÖY DAĞILIMI
+    # ==========================================
+
+    st.subheader("💰 Portfolio Distribution")
+
+    portfolio_chart = px.histogram(
+
+        customer_summary,
+
+        x="portfolio_last",
+
+        nbins=40
+
+    )
+
+    portfolio_chart.update_layout(
+
+        height=420,
+
+        xaxis_title="Portfolio Value",
+
+        yaxis_title="Customer Count"
+
+    )
+
+    st.plotly_chart(
+
+        portfolio_chart,
+
+        use_container_width=True
+        )
+
+    st.divider()
+
+    # ==========================================
+    # FEATURE IMPORTANCE
+    # ==========================================
+
+    st.subheader("📊 Most Important Risk Factors")
+
+    try:
+
+        importance = pd.DataFrame({
+
+            "Feature": feature_columns,
+
+            "Importance": model.feature_importances_
+
+        })
+
+        importance = importance.sort_values(
+            by="Importance",
+            ascending=False
+        ).head(10)
+
+        fig = px.bar(
+
+            importance,
+
+            x="Importance",
+
+            y="Feature",
+
+            orientation="h",
+
+            text_auto=".2f"
+
+        )
+
+        fig.update_layout(
+
+            height=450,
+
+            yaxis_title="",
+
+            xaxis_title="Importance Score"
+
+        )
+
+        st.plotly_chart(
+
+            fig,
+
+            use_container_width=True
+
+        )
+
+    except Exception as e:
+
+        st.warning(
+            "Feature importance görüntülenemedi."
+        )
+
+    st.divider()
+
+    # ==========================================
+    # EN RİSKLİ MÜŞTERİLER
+    # ==========================================
+
+    st.subheader("🚨 Top 10 Highest Risk Customers")
+
+    top_risk = customer_summary.sort_values(
+
+        by="risk_score",
+
+        ascending=False
+
+    )[
+
+        [
+
+            "customer_id",
+
+            "risk_score",
+
+            "portfolio_last",
+
+            "trade_decline",
+
+            "login_decline"
+
+        ]
+
+    ].head(10)
+
+    st.dataframe(
+
+        top_risk,
+
+        use_container_width=True,
+
+        hide_index=True
+
+    )
+
+    st.divider()
+
+    # ==========================================
+    # EN GÜVENLİ MÜŞTERİLER
+    # ==========================================
+
+    st.subheader("🟢 Top 10 Lowest Risk Customers")
+
+    safest = customer_summary.sort_values(
+
+        by="risk_score",
+
+        ascending=True
+
+    )[
+
+        [
+
+            "customer_id",
+
+            "risk_score",
+
+            "portfolio_last",
+
+            "trade_decline",
+
+            "login_decline"
+
+        ]
+
+    ].head(10)
+
+    st.dataframe(
+
+        safest,
+
+        use_container_width=True,
+
+        hide_index=True
+
+    )
+    # ==========================================
+# CUSTOMER ANALYSIS
+# ==========================================
+
+elif page == "👤 Customer Analysis":
+
+    st.title("👤 Customer Analysis")
+
+    customer_list = sorted(
+        customer_summary["customer_id"].unique()
+    )
+
+    selected_customer = st.selectbox(
+
+        "Select Customer",
+
+        customer_list
+
+    )
+
+    customer = customer_summary[
+        customer_summary["customer_id"] == selected_customer
+    ].iloc[0]
+
+    history_customer = history[
+        history["customer_id"] == selected_customer
+    ].copy()
+
+    history_customer = history_customer.sort_values("month")
+
+    st.divider()
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+
+        st.metric(
+            "Risk Score",
+            f'{customer["risk_score"]:.0f}/100'
+        )
+
+    with c2:
+
+        st.metric(
+            "Portfolio",
+            f'₺{customer["portfolio_last"]:,.0f}'
+        )
+
+    with c3:
+
+        st.metric(
+            "Average Trade",
+            f'{customer["avg_trade"]:.1f}'
+        )
+
+    with c4:
+
+        churn_text = "High" if customer["churn"] == 1 else "Low"
+
+        st.metric(
+            "Churn Risk",
+            churn_text
+        )
+
+    st.divider()
+
+    left, right = st.columns(2)
+
+    with left:
+
+        st.subheader("Customer Information")
+
+        info = pd.DataFrame({
+
+            "Information":[
+
+                "Customer ID",
+
+                "Age",
+
+                "Gender",
+
+                "City"
+
+            ],
+
+            "Value":[
+
+                customer["customer_id"],
+
+                customer["age"],
+
+                history_customer["gender"].iloc[0],
+
+                history_customer["city"].iloc[0]
+
+            ]
+
+        })
+
+        st.dataframe(
+
+            info,
+
+            hide_index=True,
+
+            use_container_width=True
+
+        )
+
+    with right:
+
+        st.subheader("Behavior Summary")
+
+        st.write(
+            f"""
+**Average Login :** {customer["avg_login"]:.1f}
+
+**Trade Decline :** %{customer["trade_decline"]*100:.1f}
+
+**Login Decline :** %{customer["login_decline"]*100:.1f}
+
+**Campaign Response :** %{customer["campaign_rate"]*100:.1f}
+
+**Complaints :** {customer["complaints"]}
+
+**Inactive Months :** {customer["inactive_months"]}
+"""
+        )
+
+    st.divider()
+
+    st.subheader("📈 Portfolio Trend")
+
+    portfolio_fig = px.line(
+
+        history_customer,
+
+        x="month",
+
+        y="portfolio_value",
+
+        markers=True
+
+    )
+
+    portfolio_fig.update_layout(
+
+        height=450,
+
+        xaxis_title="Month",
+
+        yaxis_title="Portfolio"
+
+    )
+
+    st.plotly_chart(
+        portfolio_fig,
+        use_container_width=True
+    )
+
+    st.divider()
+
+    # ==========================================
+    # TRADE & LOGIN TREND
+    # ==========================================
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.subheader("📉 Monthly Trade Trend")
+
+        trade_fig = px.line(
+            history_customer,
+            x="month",
+            y="monthly_trade_count",
+            markers=True
+        )
+
+        trade_fig.update_layout(
+            height=380,
+            xaxis_title="Month",
+            yaxis_title="Trade Count"
+        )
+
+        st.plotly_chart(
+            trade_fig,
+            use_container_width=True
+        )
+
+    with col2:
+
+        st.subheader("📱 Login Trend")
+
+        login_fig = px.line(
+            history_customer,
+            x="month",
+            y="login_count",
+            markers=True
+        )
+
+        login_fig.update_layout(
+            height=380,
+            xaxis_title="Month",
+            yaxis_title="Login Count"
+        )
+
+        st.plotly_chart(
+            login_fig,
+            use_container_width=True
+        )
+    st.divider()
+
+    # ==========================================
+    # CASH FLOW
+    # ==========================================
+
+    st.subheader("💸 Monthly Cash Flow")
+
+    cash = history_customer[
+
+        [
+
+            "month",
+
+            "cash_in",
+
+            "cash_out"
+
+        ]
+
+    ].copy()
+
+    cash = cash.melt(
+
+        id_vars="month",
+
+        value_vars=[
+
+            "cash_in",
+
+            "cash_out"
+
+        ],
+
+        var_name="Type",
+
+        value_name="Amount"
+
+    )
+
+    cash_fig = px.bar(
+
+        cash,
+
+        x="month",
+
+        y="Amount",
+
+        color="Type",
+
+        barmode="group"
+
+    )
+
+    cash_fig.update_layout(
+
+        height=420
+
+    )
+
+    st.plotly_chart(
+
+        cash_fig,
+
+        use_container_width=True
+
+    )
+
+    st.divider()
+
+    # ==========================================
+    # AI ANALYSIS
+    # ==========================================
+
+    st.subheader("🤖 AI Customer Analysis")
+
+    explanation = []
+
+    if customer["trade_decline"] > 0.60:
+        explanation.append(
+            "• İşlem hacmi son 12 ay içerisinde ciddi seviyede azalmış."
+        )
+
+    if customer["login_decline"] > 0.50:
+        explanation.append(
+            "• Dijital kanallara giriş sıklığında belirgin düşüş görülüyor."
+        )
+
+    if customer["portfolio_growth"] < -0.25:
+        explanation.append(
+            "• Portföy değeri önemli ölçüde küçülmüş."
+        )
+
+    if customer["cash_out_total"] > customer["cash_in_total"]:
+        explanation.append(
+            "• Nakit çıkışları girişlerden daha yüksek."
+        )
+
+    if customer["campaign_rate"] < 0.30:
+        explanation.append(
+            "• Kampanyalara katılım oldukça düşük."
+        )
+
+    if customer["complaints"] >= 5:
+        explanation.append(
+            "• Müşteri şikayet sayısı yüksek."
+        )
+
+    if customer["inactive_months"] >= 3:
+        explanation.append(
+            "• Uzun süredir işlem yapılmayan aylar mevcut."
+        )
+
+    if len(explanation) == 0:
+
+        st.success(
+            "Bu müşterinin davranışlarında belirgin bir churn sinyali tespit edilmedi."
+        )
+
+    else:
+
+        st.warning("\n".join(explanation))
+
+    st.divider()
+
+    # ==========================================
+    # RECOMMENDED ACTIONS
+    # ==========================================
+
+    st.subheader("🎯 Recommended Actions")
+
+    actions = []
+
+    if customer["risk_score"] >= 70:
+
+        actions.extend([
+
+            "📞 Müşteri temsilcisi tarafından aranmalı",
+
+            "💰 Özel yatırım kampanyası sunulmalı",
+
+            "🎁 Komisyon indirimi önerilmeli",
+
+            "👨‍💼 Portföy danışmanı atanmalı"
+
+        ])
+
+    elif customer["risk_score"] >= 50:
+
+        actions.extend([
+
+            "📧 Kişiselleştirilmiş e-posta gönder",
+
+            "📱 Mobil uygulama bildirimi gönder",
+
+            "📈 Yeni fon önerileri sun"
+
+        ])
+
+    else:
+
+        actions.append(
+            "✅ Mevcut müşteri ilişkisi sağlıklı görünüyor."
+        )
+
+    for action in actions:
+
+        st.write(action)
+
+    # ==========================================
+# CUSTOMER TRENDS
+# ==========================================
+
+elif page == "📈 Customer Trends":
+
+    st.title("📈 Customer Trends")
+
+    monthly = history.copy()
+
+    monthly["month"] = pd.to_datetime(monthly["month"])
+
+    st.markdown("### 📊 Overall Customer Behavior")
+
+    trend = monthly.groupby("month").agg({
+
+        "portfolio_value": "mean",
+
+        "monthly_trade_count": "mean",
+
+        "login_count": "mean",
+
+        "cash_in": "sum",
+
+        "cash_out": "sum"
+
+    }).reset_index()
+
+    # ==========================================
+    # PORTFOLIO & TRADE
+    # ==========================================
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.subheader("💰 Average Portfolio Value")
+
+        fig = px.line(
+
+            trend,
+
+            x="month",
+
+            y="portfolio_value",
+
+            markers=True
+
+        )
+
+        fig.update_layout(
+
+            height=380,
+
+            xaxis_title="Month",
+
+            yaxis_title="Portfolio"
+
+        )
+
+        st.plotly_chart(
+
+            fig,
+
+            use_container_width=True
+
+        )
+
+    with col2:
+
+        st.subheader("📉 Average Monthly Trade")
+
+        fig = px.line(
+
+            trend,
+
+            x="month",
+
+            y="monthly_trade_count",
+
+            markers=True
+
+        )
+
+        fig.update_layout(
+
+            height=380,
+
+            xaxis_title="Month",
+
+            yaxis_title="Trade Count"
+
+        )
+
+        st.plotly_chart(
+
+            fig,
+
+            use_container_width=True
+
+        )
+
+    st.divider()
+
+    # ==========================================
+    # LOGIN & CASH FLOW
+    # ==========================================
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.subheader("📱 Average Login Count")
+
+        fig = px.line(
+
+            trend,
+
+            x="month",
+
+            y="login_count",
+
+            markers=True
+
+        )
+
+        fig.update_layout(
+
+            height=380,
+
+            xaxis_title="Month",
+
+            yaxis_title="Login Count"
+
+        )
+
+        st.plotly_chart(
+
+            fig,
+
+            use_container_width=True
+
+        )
+
+    with col2:
+
+        st.subheader("💸 Cash Flow")
+
+        cash = trend[
+
+            [
+
+                "month",
+
+                "cash_in",
+
+                "cash_out"
+
+            ]
+
+        ].melt(
+
+            id_vars="month",
+
+            var_name="Type",
+
+            value_name="Amount"
+
+        )
+
+        fig = px.bar(
+
+            cash,
+
+            x="month",
+
+            y="Amount",
+
+            color="Type",
+
+            barmode="group"
+
+        )
+
+        fig.update_layout(
+
+            height=380
+
+        )
+
+        st.plotly_chart(
+
+            fig,
+
+            use_container_width=True
+
+        )
+
+    st.divider()
+
+    # ==========================================
+    # CUSTOMER ACTIVITY SUMMARY
+    # ==========================================
+
+    st.subheader("📋 Customer Activity Summary")
+
+    summary = pd.DataFrame({
+
+        "Metric": [
+
+            "Average Portfolio",
+
+            "Average Trade",
+
+            "Average Login",
+
+            "Total Cash In",
+
+            "Total Cash Out"
+
+        ],
+
+        "Value": [
+
+            f"₺{trend['portfolio_value'].mean():,.0f}",
+
+            round(trend["monthly_trade_count"].mean(),2),
+
+            round(trend["login_count"].mean(),2),
+
+            f"₺{trend['cash_in'].sum():,.0f}",
+
+            f"₺{trend['cash_out'].sum():,.0f}"
+
+        ]
+
+    })
+
+    st.dataframe(
+
+        summary,
+
+        hide_index=True,
+
+        use_container_width=True
+
+    )
+    # ==========================================
+# AI INSIGHTS
+# ==========================================
+
+elif page == "🤖 AI Insights":
+
+    st.title("🤖 AI Insights")
+
+    st.markdown(
+        "Yapay zeka tarafından oluşturulan genel müşteri risk analizi"
+    )
+
+    st.divider()
+
+    # ==========================================
+    # FEATURE IMPORTANCE
+    # ==========================================
+
+    st.subheader("📊 Top Risk Factors")
+
+    importance = pd.DataFrame({
+
+        "Feature": feature_columns,
+
+        "Importance": model.feature_importances_
+
+    })
+
+    importance = importance.sort_values(
+
+        by="Importance",
+
+        ascending=False
+
+    )
+
+    fig = px.bar(
+
+        importance.head(10),
+
+        x="Importance",
+
+        y="Feature",
+
+        orientation="h",
+
+        text_auto=".3f"
+
     )
 
     fig.update_layout(
-        paper_bgcolor="white",
-        plot_bgcolor="white",
-        font=dict(
-            family="Arial",
-            size=14,
-            color="#111827"
-        ),
-        margin=dict(l=20, r=20, t=60, b=20)
+
+        height=450,
+
+        yaxis_title="",
+
+        xaxis_title="Importance"
+
     )
 
     st.plotly_chart(
+
         fig,
+
         use_container_width=True
+
     )
 
-with right:
+    st.divider()
 
-    city = (
-        df.groupby("city")
-        .size()
-        .reset_index(name="Customer Count")
+    # ==========================================
+    # RISK LEVEL ANALYSIS
+    # ==========================================
+
+    st.subheader("🚨 Risk Distribution")
+
+    low = len(customer_summary[
+        customer_summary["risk_score"] < 35
+    ])
+
+    medium = len(customer_summary[
+        (customer_summary["risk_score"] >= 35) &
+        (customer_summary["risk_score"] < 65)
+    ])
+
+    high = len(customer_summary[
+        customer_summary["risk_score"] >= 65
+    ])
+
+    risk_df = pd.DataFrame({
+
+        "Risk":[
+
+            "Low",
+
+            "Medium",
+
+            "High"
+
+        ],
+
+        "Customers":[
+
+            low,
+
+            medium,
+
+            high
+
+        ]
+
+    })
+
+    fig = px.bar(
+
+        risk_df,
+
+        x="Risk",
+
+        y="Customers",
+
+        text="Customers"
+
     )
 
-    fig2 = px.bar(
-        city,
-        x="city",
-        y="Customer Count",
-        title="Customers by City"
-    )
+    fig.update_layout(
 
-    fig2.update_layout(
-        paper_bgcolor="white",
-        plot_bgcolor="white",
-        font=dict(
-            family="Arial",
-            size=14,
-            color="#111827"
-        ),
-        margin=dict(l=20, r=20, t=60, b=20)
+        height=400
+
     )
 
     st.plotly_chart(
-        fig2,
+
+        fig,
+
         use_container_width=True
+
     )
 
-# ==========================
-# TOP10
-# ==========================
+    st.divider()
 
-st.divider()
+    # ==========================================
+    # HIGH RISK CITIES
+    # ==========================================
 
-st.subheader("🔥 Top 10 Highest Risk Customers")
+    st.subheader("🏙️ Highest Risk Cities")
 
-risk=df.copy()
+    city_risk = history.merge(
 
-X=risk.drop(
-    columns=["customer_id","churn"]
-)
+        customer_summary[
+            [
 
-X=pd.get_dummies(
-    X,
-    columns=["gender","city"],
-    drop_first=True
-)
+                "customer_id",
 
-for col in model.feature_names_in_:
-    if col not in X.columns:
-        X[col]=0
+                "risk_score"
 
-X=X[model.feature_names_in_]
+            ]
 
-risk["Risk Score"]=(
-    model.predict_proba(X)[:,1]*100
-).round(1)
+        ],
 
-top10=risk.sort_values(
-    "Risk Score",
-    ascending=False
-).head(10)
+        on="customer_id"
 
-st.dataframe(
-    top10[
-        [
-            "customer_id",
-            "city",
-            "portfolio_value",
-            "Risk Score"
+    )
+
+    city_risk = city_risk.groupby(
+
+        "city"
+
+    )["risk_score"].mean().reset_index()
+
+    city_risk = city_risk.sort_values(
+
+        by="risk_score",
+
+        ascending=False
+
+    )
+
+    fig = px.bar(
+
+        city_risk.head(10),
+
+        x="city",
+
+        y="risk_score",
+
+        text_auto=".1f"
+
+    )
+
+    fig.update_layout(
+
+        height=420,
+
+        xaxis_title="City",
+
+        yaxis_title="Average Risk Score"
+
+    )
+
+    st.plotly_chart(
+
+        fig,
+
+        use_container_width=True
+
+    )
+
+    st.divider()
+
+    # ==========================================
+    # AI MANAGEMENT SUMMARY
+    # ==========================================
+
+    st.subheader("🧠 AI Executive Summary")
+
+    high_risk_pct = round(
+        high / len(customer_summary) * 100,
+        1
+    )
+
+    churn_pct = round(
+        customer_summary["churn"].mean() * 100,
+        1
+    )
+
+    avg_portfolio = customer_summary[
+        "portfolio_last"
+    ].mean()
+
+    st.info(
+f"""
+### Executive Summary
+
+• Total customer count: **{len(customer_summary):,}**
+
+• High-risk customer ratio: **%{high_risk_pct}**
+
+• Estimated churn rate: **%{churn_pct}**
+
+• Average portfolio size: **₺{avg_portfolio:,.0f}**
+
+### AI Evaluation
+
+The strongest factors affecting churn are:
+
+- Decline in trading activity
+- Decrease in digital login frequency
+- Reduction in portfolio value
+- Increase in cash outflows
+- Low campaign engagement
+
+### Recommendation
+
+Customers with a risk score above **70** should be prioritized for proactive retention campaigns and personalized investment offers.
+"""
+    )
+    # ==========================================
+# PORTFOLIO ANALYTICS
+# ==========================================
+
+elif page == "📊 Portfolio Analytics":
+
+    st.title("📊 Portfolio Analytics")
+
+    st.markdown(
+        "Portfolio, risk and demographic analysis of customers."
+    )
+
+    st.divider()
+
+    # ==========================================
+    # CITY ANALYSIS
+    # ==========================================
+
+    city_df = history.groupby("city").agg({
+
+        "portfolio_value": "mean",
+
+        "monthly_trade_count": "mean",
+
+        "login_count": "mean"
+
+    }).reset_index()
+
+    risk_city = history[["customer_id","city"]].drop_duplicates()
+
+    risk_city = risk_city.merge(
+
+        customer_summary[
+
+            [
+
+                "customer_id",
+
+                "risk_score"
+
+            ]
+
+        ],
+
+        on="customer_id"
+
+    )
+
+    risk_city = risk_city.groupby(
+
+        "city"
+
+    )["risk_score"].mean().reset_index()
+
+    city_df = city_df.merge(
+
+        risk_city,
+
+        on="city"
+
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.subheader("🏙 Average Portfolio by City")
+
+        fig = px.bar(
+
+            city_df.sort_values(
+
+                "portfolio_value",
+
+                ascending=False
+
+            ),
+
+            x="city",
+
+            y="portfolio_value",
+
+            text_auto=".0f"
+
+        )
+
+        fig.update_layout(
+
+            height=420,
+
+            xaxis_title="City",
+
+            yaxis_title="Average Portfolio"
+
+        )
+
+        st.plotly_chart(
+
+            fig,
+
+            use_container_width=True
+
+        )
+
+    with col2:
+
+        st.subheader("🚨 Average Risk by City")
+
+        fig = px.bar(
+
+            city_df.sort_values(
+
+                "risk_score",
+
+                ascending=False
+
+            ),
+
+            x="city",
+
+            y="risk_score",
+
+            text_auto=".1f"
+
+        )
+
+        fig.update_layout(
+
+            height=420,
+
+            xaxis_title="City",
+
+            yaxis_title="Risk Score"
+
+        )
+
+        st.plotly_chart(
+
+            fig,
+
+            use_container_width=True
+
+        )
+
+    st.divider()
+
+    # ==========================================
+    # AGE ANALYSIS
+    # ==========================================
+
+    age_df = customer_summary.copy()
+
+    age_df["Age Group"] = pd.cut(
+
+        age_df["age"],
+
+        bins=[18,30,40,50,60,80],
+
+        labels=[
+
+            "18-30",
+
+            "31-40",
+
+            "41-50",
+
+            "51-60",
+
+            "60+"
+
         ]
-    ],
-    use_container_width=True
-)
 
-st.divider()
-
-# ==========================
-# EXECUTIVE SUMMARY
-# ==========================
-
-durum="Low"
-
-if oran>15:
-    durum="High"
-
-elif oran>5:
-    durum="Medium"
-
-st.info(f"""
-
-## 🧠 AI Executive Summary
-
-• Customers : **{toplam_musteri}**
-
-• Churn : **{toplam_churn}**
-
-• Churn Rate : **%{oran:.1f}**
-
-• Risk Level : **{durum}**
-
-AI recommends prioritizing inactive
-customers and customers with
-high portfolio value.
-
-""")
-
-# ==========================
-# SEKMELER
-# ==========================
-
-tab1,tab2=st.tabs([
-    "👤 Customer Analysis",
-    "📂 Batch Analysis"
-])
-
-
-
-# ==========================
-# TEK MÜŞTERİ ANALİZİ
-# ==========================
-
-with tab1:
-
-    st.subheader("🔍 Customer Analysis")
-
-    customer_id = st.text_input(
-        "Customer ID",
-        placeholder="Example: 1005"
     )
 
-    if st.button("🚀 Analyze Customer", use_container_width=True):
+    age_analysis = age_df.groupby(
 
-        if customer_id == "":
-            st.warning("Please enter a Customer ID.")
+        "Age Group",
 
-        else:
+        observed=False
 
-            try:
+    ).agg({
 
-                customer_id = int(customer_id)
+        "portfolio_last":"mean",
 
-                customer = df[
-                    df["customer_id"] == customer_id
-                ]
+        "risk_score":"mean"
 
-                if customer.empty:
+    }).reset_index()
 
-                    st.error("❌ Customer not found.")
+    col1, col2 = st.columns(2)
 
-                else:
+    with col1:
 
-                    st.success("✅ Customer Found")
+        st.subheader("👤 Portfolio by Age Group")
 
-                    left, right = st.columns([1, 1])
+        fig = px.bar(
 
-                    # -------------------------
-                    # CUSTOMER INFORMATION
-                    # -------------------------
+            age_analysis,
 
-                    with left:
+            x="Age Group",
 
-                        st.subheader("📋 Customer Information")
+            y="portfolio_last",
 
-                        st.dataframe(
-                            customer,
-                            use_container_width=True
-                        )
+            text_auto=".0f"
 
+        )
 
-                    # -------------------------
-                    # MODEL PREPARATION
-                    # -------------------------
+        fig.update_layout(
 
-                    customer_ml = customer.copy()
+            height=400
 
-                    customer_ml = customer_ml.drop(
-                        columns=["customer_id", "churn"]
-                    )
+        )
 
-                    customer_ml = pd.get_dummies(
-                        customer_ml,
-                        columns=["gender", "city"],
-                        drop_first=True
-                    )
+        st.plotly_chart(
 
+            fig,
 
-                    for col in model.feature_names_in_:
+            use_container_width=True
 
-                        if col not in customer_ml.columns:
-                            customer_ml[col] = 0
+        )
 
+    with col2:
 
-                    customer_ml = customer_ml[
-                        model.feature_names_in_
-                    ]
+        st.subheader("⚠ Risk by Age Group")
 
+        fig = px.line(
 
-                    prediction = model.predict(
-                        customer_ml
-                    )[0]
+            age_analysis,
 
+            x="Age Group",
 
-                    probability = model.predict_proba(
-                        customer_ml
-                    )[0][1]
+            y="risk_score",
 
+            markers=True
 
-                    # -------------------------
-                    # AI PREDICTION
-                    # -------------------------
+        )
 
-                    with right:
+        fig.update_layout(
 
-                        st.subheader("🤖 AI Prediction")
+            height=400
 
+        )
 
-                        gauge = go.Figure(
+        st.plotly_chart(
 
-                            go.Indicator(
+            fig,
 
-                                mode="gauge+number",
+            use_container_width=True
 
-                                value=probability * 100,
+        )
 
-                                number={
-                                    "suffix": "%",
-                                    "font": {
-                                        "color": "white",
-                                        "size": 40
-                                    }
-                                },
+    st.divider()
 
-                                title={
-                                    "text": "Customer Risk Score",
-                                    "font": {
-                                        "color": "white",
-                                        "size": 20
-                                    }
-                                },
+    # ==========================================
+    # GENDER ANALYSIS
+    # ==========================================
 
-                                gauge={
+    gender_df = history[
 
-                                    "axis": {
-                                        "range": [0, 100],
-                                        "tickcolor": "white"
-                                    },
+        [
 
-                                    "bar": {
-                                        "color": "#007AFF"
-                                    },
+            "customer_id",
 
-                                    "bgcolor": "#111111",
+            "gender"
 
-                                    "bordercolor": "#555555",
+        ]
 
-                                    "steps": [
+    ].drop_duplicates()
 
-                                        {
-                                            "range": [0, 40],
-                                            "color": "#166534"
-                                        },
+    gender_df = gender_df.merge(
 
-                                        {
-                                            "range": [40, 70],
-                                            "color": "#A16207"
-                                        },
+        customer_summary[
 
-                                        {
-                                            "range": [70, 100],
-                                            "color": "#991B1B"
-                                        }
+            [
 
-                                    ]
-                                }
-                            )
-                        )
+                "customer_id",
 
+                "portfolio_last",
 
+                "risk_score"
 
-                        gauge.update_layout(
+            ]
 
-                            height=320,
+        ],
 
-                            paper_bgcolor="#111111",
+        on="customer_id"
 
-                            plot_bgcolor="#111111",
+    )
 
-                            font={
-                                "color": "white"
-                            },
+    gender_analysis = gender_df.groupby(
 
-                            margin=dict(
-                                l=20,
-                                r=20,
-                                t=50,
-                                b=20
-                            )
-                        )
+        "gender"
 
+    ).agg({
 
-                        st.plotly_chart(
+        "portfolio_last":"mean",
 
-                            gauge,
+        "risk_score":"mean"
 
-                            use_container_width=True
+    }).reset_index()
 
-                        )
+    st.subheader("👥 Gender Analysis")
 
+    col1, col2 = st.columns(2)
 
-                        if prediction == 1:
+    with col1:
 
-                            st.error("🔴 HIGH CHURN RISK")
+        fig = px.pie(
 
-                        else:
+            gender_analysis,
 
-                            st.success("🟢 LOW CHURN RISK")                    
+            names="gender",
 
+            values="portfolio_last",
 
-                    st.markdown("---")
+            hole=0.6
 
+        )
 
-                    st.subheader("🧠 AI Insight")
+        fig.update_layout(
 
+            height=380
 
-                    if prediction == 1:
+        )
 
-                        st.warning(f"""
-Customer behavior indicates a high churn probability.
+        st.plotly_chart(
 
-Current Risk Score: **{probability*100:.1f}%**
+            fig,
 
-### Recommended Actions
+            use_container_width=True
 
-• Contact customer immediately
+        )
 
-• Offer a personalized investment campaign
+    with col2:
 
-• Assign an investment advisor
+        fig = px.bar(
 
-• Monitor future trading activity
-""")
+            gender_analysis,
 
-                    else:
+            x="gender",
 
-                        st.success(f"""
-Customer shows a low churn probability.
+            y="risk_score",
 
-Current Risk Score: **{probability*100:.1f}%**
+            text_auto=".1f"
 
-### Recommended Actions
+        )
 
-• Maintain customer engagement
+        fig.update_layout(
 
-• Offer premium investment opportunities
+            height=380
 
-• Monitor portfolio activity
-""")
+        )
 
-                    st.divider()
+        st.plotly_chart(
 
-                    col1, col2 = st.columns(2)
+            fig,
 
-                    with col1:
+            use_container_width=True
 
-                        st.subheader("🧠 AI Risk Analysis")
+        )
 
-                        riskler = []
+    st.divider()
 
-                        if customer.iloc[0]["last_login_days"] > 30:
-                            riskler.append("📱 Uzun süredir giriş yapmıyor.")
+    # ==========================================
+    # TOP PORTFOLIO CUSTOMERS
+    # ==========================================
 
-                        if customer.iloc[0]["last_trade_days"] > 30:
-                            riskler.append("📉 Uzun süredir işlem yapmamış.")
+    st.subheader("🏆 Top 20 Customers by Portfolio")
 
-                        if customer.iloc[0]["monthly_trade_count"] < 3:
-                            riskler.append("📊 İşlem hacmi düşük.")
+    top_portfolio = customer_summary.sort_values(
 
-                        if customer.iloc[0]["campaign_click"] == 0:
-                            riskler.append("🎯 Kampanyalarla etkileşim yok.")
+        "portfolio_last",
 
-                        if customer.iloc[0]["complaints"] > 0:
-                            riskler.append("⚠️ Şikayet kaydı mevcut.")
+        ascending=False
 
-                        if customer.iloc[0]["cash_out_3m"] > 50000:
-                            riskler.append("💸 Son 3 ayda yüksek para çıkışı.")
+    )[
 
+        [
 
-                        if len(riskler) == 0:
+            "customer_id",
 
-                            st.success(
-                                "Belirgin risk bulunamadı."
-                            )
+            "portfolio_last",
 
-                        else:
+            "risk_score",
 
-                            for r in riskler:
-                                st.write(r)
+            "avg_trade",
 
+            "avg_login"
 
+        ]
 
-                    with col2:
+    ].head(20)
 
-                        st.subheader("💡 AI Recommendations")
+    st.dataframe(
 
-                        oneriler = []
+        top_portfolio,
 
+        use_container_width=True,
 
-                        if customer.iloc[0]["last_login_days"] > 30:
-                            oneriler.append("📲 Push bildirimi gönder.")
+        hide_index=True
 
-                        if customer.iloc[0]["last_trade_days"] > 30:
-                            oneriler.append("📞 Danışman müşteriyi arasın.")
+    )# ==========================================
+# CUSTOMER SEGMENTATION
+# ==========================================
 
-                        if customer.iloc[0]["campaign_click"] == 0:
-                            oneriler.append("🎁 Kişiselleştirilmiş kampanya.")
+elif page == "👥 Customer Segmentation":
 
-                        if customer.iloc[0]["monthly_trade_count"] < 3:
-                            oneriler.append("📈 Eğitim içerikleri öner.")
+    st.title("👥 Customer Segmentation")
 
-                        if customer.iloc[0]["cash_out_3m"] > 50000:
-                            oneriler.append("💼 Portföy danışmanlığı öner.")
+    segmentation = customer_summary.copy()
 
+    segmentation["Segment"] = np.select(
 
-                        if len(oneriler) == 0:
+        [
 
-                            st.success(
-                                "Ek aksiyon gerekmiyor."
-                            )
+            segmentation["risk_score"] < 25,
 
-                        else:
+            (segmentation["risk_score"] >= 25) &
+            (segmentation["risk_score"] < 50),
 
-                            for o in oneriler:
-                                st.write(o)
+            (segmentation["risk_score"] >= 50) &
+            (segmentation["risk_score"] < 75),
 
+            segmentation["risk_score"] >= 75
 
-            except ValueError:
+        ],
 
-                st.error(
-                    "Lütfen sadece sayı giriniz."
-                )
+        [
 
+            "Champions",
 
-            except Exception as e:
+            "Loyal",
 
-                st.error(
-                    f"Error: {e}"
-                )
+            "At Risk",
 
+            "Critical"
 
+        ],
 
-# ==========================
-# TOPLU ANALİZ
-# ==========================
-with tab2:
+        default="Unknown"
 
-    st.subheader("📂 Toplu Churn Analizi")
+    )
 
-    uploaded_file = st.file_uploader(
-        "Excel Dosyası Yükle",
+    st.subheader("Customer Segments")
+
+    fig = px.pie(
+
+        segmentation,
+
+        names="Segment",
+
+        hole=0.60
+
+    )
+
+    fig.update_layout(height=450)
+
+    st.plotly_chart(
+
+        fig,
+
+        use_container_width=True
+
+    )
+
+    st.divider()
+
+    segment_table = segmentation.groupby(
+
+        "Segment",
+
+        observed=False
+
+    ).agg({
+
+        "customer_id":"count",
+
+        "portfolio_last":"mean",
+
+        "risk_score":"mean"
+
+    }).reset_index()
+
+    segment_table.columns = [
+
+        "Segment",
+
+        "Customer Count",
+
+        "Average Portfolio",
+
+        "Average Risk"
+
+    ]
+
+    st.dataframe(
+
+        segment_table,
+
+        use_container_width=True,
+
+        hide_index=True
+
+    )
+
+# ==========================================
+# BATCH PREDICTION
+# ==========================================
+
+elif page == "📁 Batch Prediction":
+
+    st.title("📁 Batch Prediction")
+
+    st.write(
+        "Ham 12 aylık müşteri hareket datasını yükleyerek AI churn tahmini oluşturun."
+    )
+
+
+    uploaded = st.file_uploader(
+        "Upload Customer History Excel",
         type=["xlsx"]
     )
 
-    if uploaded_file is not None:
 
-        batch_df = pd.read_excel(uploaded_file)
+    if uploaded is not None:
 
-        st.success(f"✅ {len(batch_df)} müşteri yüklendi.")
 
-        if st.button("🚀 Toplu Analizi Başlat"):
+        history_batch = pd.read_excel(uploaded)
 
-            sonuc_df = batch_df.copy()
 
-            # Model için veri hazırla
-            X = sonuc_df.drop(columns=["customer_id", "churn"])
+        st.success(
+            "Excel başarıyla yüklendi."
+        )
 
-            X = pd.get_dummies(
-                X,
-                columns=["gender", "city"],
-                drop_first=True
-            )
 
-            # Eksik sütunları tamamla
-            for col in model.feature_names_in_:
-                if col not in X.columns:
-                    X[col] = 0
+        st.write(
+            "Ham veri boyutu:",
+            history_batch.shape
+        )
 
-            X = X[model.feature_names_in_]
 
-            # Tahminler
-            probabilities = model.predict_proba(X)[:, 1]
+        # ===============================
+        # MÜŞTERİ BAZLI ÖZET
+        # ===============================
 
-            sonuc_df["Churn Probability"] = (
-                probabilities * 100
-            ).round(1)
 
-            # Risk Seviyesi
-            risk = []
+        customer_summary_batch = []
 
-            for p in probabilities:
 
-                if p >= 0.70:
-                    risk.append("🔴 Yüksek")
+        for customer_id, customer in history_batch.groupby("customer_id"):
 
-                elif p >= 0.40:
-                    risk.append("🟡 Orta")
 
-                else:
-                    risk.append("🟢 Düşük")
+            customer = customer.sort_values("month")
 
-            sonuc_df["Risk Level"] = risk
 
-            # En riskliler üstte
-            sonuc_df = sonuc_df.sort_values(
-                by="Churn Probability",
-                ascending=False
-            )
+            first3 = customer.head(3)
 
-            st.subheader("📊 Analiz Sonuçları")
+            last3 = customer.tail(3)
 
-            st.dataframe(
-                sonuc_df,
-                use_container_width=True
-            )
 
-            # ==========================
-            # TOPLU ANALİZ ÖZETİ
-            # ==========================
+            summary = {}
 
-            toplam = len(sonuc_df)
-            yuksek = len(
-                sonuc_df[
-                    sonuc_df["Risk Level"] == "🔴 Yüksek"
-                ]
-            )
 
-            orta = len(
-                sonuc_df[
-                    sonuc_df["Risk Level"] == "🟡 Orta"
-                ]
-            )
+            summary["customer_id"] = customer_id
 
-            dusuk = len(
-                sonuc_df[
-                    sonuc_df["Risk Level"] == "🟢 Düşük"
-                ]
-            )
 
-            st.markdown("### 📊 Toplu Analiz Özeti")
+            summary["age"] = customer["age"].iloc[0]
 
-            k1, k2, k3, k4 = st.columns(4)
 
-            with k1:
-                st.metric("👥 Toplam", toplam)
+            summary["portfolio_avg"] = customer["portfolio_value"].mean()
 
-            with k2:
-                st.metric("🔴 Yüksek Risk", yuksek)
 
-            with k3:
-                st.metric("🟡 Orta Risk", orta)
+            summary["portfolio_last"] = customer["portfolio_value"].iloc[-1]
 
-            with k4:
-                st.metric("🟢 Düşük Risk", dusuk)
 
-            fig = px.pie(
-                sonuc_df,
-                names="Risk Level",
-                title="Risk Dağılımı"
-            )
+            summary["portfolio_growth"] = (
+                customer["portfolio_value"].iloc[-1]
+                -
+                customer["portfolio_value"].iloc[0]
+            ) / max(customer["portfolio_value"].iloc[0],1)
 
-            st.plotly_chart(
-                fig,
-                use_container_width=True
-            )
 
-            # ==========================
-            # EXCEL İNDİR
-            # ==========================
+            summary["avg_trade"] = customer["monthly_trade_count"].mean()
 
-            sonuc_df.to_excel(
-                "riskli_musteriler.xlsx",
-                index=False
-            )
 
-            with open(
-                "riskli_musteriler.xlsx",
-                "rb"
-            ) as file:
+            summary["trade_decline"] = (
+                first3["monthly_trade_count"].mean()
+                -
+                last3["monthly_trade_count"].mean()
+            ) / max(first3["monthly_trade_count"].mean(),1)
 
-                st.download_button(
-                    label="📥 Sonuçları Excel Olarak İndir",
-                    data=file,
-                    file_name="AI_Churn_Result.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True
-                )
+
+            summary["avg_login"] = customer["login_count"].mean()
+
+
+            summary["login_decline"] = (
+                first3["login_count"].mean()
+                -
+                last3["login_count"].mean()
+            ) / max(first3["login_count"].mean(),1)
+
+
+            summary["cash_in_total"] = customer["cash_in"].sum()
+
+
+            summary["cash_out_total"] = customer["cash_out"].sum()
+
+
+            summary["campaign_rate"] = customer["campaign_click"].mean()
+
+
+            summary["inactive_months"] = (
+                customer["monthly_trade_count"] == 0
+            ).sum()
+
+
+            customer_summary_batch.append(summary)
+
+
+
+        batch = pd.DataFrame(customer_summary_batch)
+
+
+
+        # ===============================
+        # MODEL FORMATI
+        # ===============================
+
+
+        batch_model = batch.copy()
+
+
+        prediction = model.predict(
+            batch_model[feature_columns]
+        )
+
+
+        probability = model.predict_proba(
+            batch_model[feature_columns]
+        )[:,1]
+
+
+        batch["Prediction"] = prediction
+
+
+        batch["Churn Probability %"] = (
+            probability * 100
+        ).round(2)
+
+
+
+        st.subheader(
+            "🤖 AI Prediction Results"
+        )
+
+
+        st.dataframe(
+            batch,
+            use_container_width=True
+        )
+
+
+        csv = batch.to_csv(
+            index=False
+        ).encode("utf-8")
+
+
+        st.download_button(
+
+            "📥 Download Results",
+
+            csv,
+
+            "churn_predictions.csv",
+
+            "text/csv"
+
+        )

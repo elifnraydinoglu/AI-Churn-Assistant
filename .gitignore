@@ -24,3 +24,11 @@ Thumbs.db
 
 # Excel temporary files
 ~$*.xlsx
+
+# Excel data
+data/*.xlsx
+
+# Generated files
+customer_summary.xlsx
+
+# Python model files
